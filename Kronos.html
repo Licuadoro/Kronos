@@ -1831,7 +1831,8 @@
       { id: 'default', name: 'Predeterminado' },
       { id: 'console', name: 'Console' },
       { id: 'cyberpunk', name: 'Cyberpunk' },
-      { id: 'nocturne', name: 'Nocturne' }
+      { id: 'nocturne', name: 'Nocturne' },
+      { id: 'steampunk', name: 'Steampunk', icon: '⚙️' }
     ];
 
     themes.forEach(function(th){
@@ -1840,6 +1841,15 @@
       card.dataset.theme = th.id;
       var preview = document.createElement('div');
       preview.className = 'theme-preview';
+      
+      // Add icon if available (for steampunk theme)
+      if(th.icon){
+        var icon = document.createElement('div');
+        icon.className = 'theme-icon';
+        icon.textContent = th.icon;
+        preview.appendChild(icon);
+      }
+      
       var name = document.createElement('div');
       name.className = 'theme-name';
       name.textContent = th.name;
@@ -4139,31 +4149,7 @@
     openSettings = function(){
       previousOpenSettingsSteampunk();
 
-      setTimeout(function(){
-        var grid = document.querySelector('.theme-grid');
-        if(!grid || grid.querySelector('[data-theme="steampunk"]')) return;
-
-        var card = document.createElement('div');
-        card.className = 'theme-card' + (currentTheme === 'steampunk' ? ' active' : '');
-        card.dataset.theme = 'steampunk';
-
-        var preview = document.createElement('div');
-        preview.className = 'theme-preview';
-        preview.style.position = 'relative';
-
-        var name = document.createElement('div');
-        name.className = 'theme-name';
-        name.textContent = 'Steampunk';
-
-        card.appendChild(preview);
-        card.appendChild(name);
-
-        card.addEventListener('click', function(){
-          applyTheme('steampunk');
-        });
-
-        grid.appendChild(card);
-      }, 0);
+      // Steampunk theme is now added directly in the themes array, no need to add dynamically
     };
 
     function ensureColorSettingsWorkForAllThemes(){
@@ -5004,31 +4990,9 @@
     openSettings = function(){
       previousOpenSettingsFinalColors();
 
+      // Steampunk theme is now added directly in the themes array, no need to add dynamically
+
       setTimeout(function(){
-        var grid = document.querySelector('.theme-grid');
-
-        if(grid && !grid.querySelector('[data-theme="steampunk"]')){
-          var card = document.createElement('div');
-          card.className = 'theme-card' + (currentTheme === 'steampunk' ? ' active' : '');
-          card.dataset.theme = 'steampunk';
-
-          var preview = document.createElement('div');
-          preview.className = 'theme-preview';
-
-          var name = document.createElement('div');
-          name.className = 'theme-name';
-          name.textContent = 'Steampunk';
-
-          card.appendChild(preview);
-          card.appendChild(name);
-          card.addEventListener('click', function(){
-            applyTheme('steampunk');
-            openSettings();
-          });
-
-          grid.appendChild(card);
-        }
-
         var keys = ['--bg', '--panel-bg', '--chalk', '--amber', '--panel-border'];
         var inputs = document.querySelectorAll('.custom-colors-section input[type="color"]');
         var saved = loadThemeColors();
@@ -5679,6 +5643,38 @@
   })();
 
 init();
+})();
+
+// Fix sidebar toggle button functionality
+(function(){
+  var btn = document.getElementById('btn-toggle-sidebar');
+  var panelBtn = document.getElementById('toggle-sidebar-panel');
+  
+  if(btn){
+    btn.addEventListener('click', function(){
+      var sidebar = document.getElementById('sidebar');
+      if(sidebar){
+        sidebar.classList.toggle('closed');
+      }
+    });
+  }
+  
+  if(panelBtn){
+    panelBtn.addEventListener('click', function(){
+      var sidebar = document.getElementById('sidebar');
+      if(sidebar){
+        sidebar.classList.toggle('closed');
+      }
+    });
+  }
+  
+  // Auto-close sidebar on presentation
+  setTimeout(function(){
+    var sidebar = document.getElementById('sidebar');
+    if(sidebar && !sidebar.classList.contains('closed')){
+      sidebar.classList.add('closed');
+    }
+  }, 500);
 })();
 </script><button id="toggle-sidebar-panel" type="button" class="panel-float-toggle" title="Cerrar menú lateral">‹</button>
 
