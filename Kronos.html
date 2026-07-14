@@ -5723,9 +5723,43 @@
 
   // Función para entrar al editor
   function enterEditor(){
-    document.getElementById('welcome-screen').classList.add('hidden');
-    document.getElementById('app').style.display = '';
-    init();
+    var welcomeScreen = document.getElementById('welcome-screen');
+    var app = document.getElementById('app');
+    
+    if (welcomeScreen) {
+      welcomeScreen.style.opacity = '0';
+      setTimeout(function() {
+        welcomeScreen.style.display = 'none';
+        if (app) {
+          app.style.display = 'block';
+          app.style.visibility = 'visible';
+          app.style.opacity = '1';
+        }
+        
+        // Cerrar panel lateral al entrar
+        var sidebar = document.querySelector('.sidebar-left');
+        if (sidebar) {
+          sidebar.classList.add('closed');
+          var toggleBtn = document.querySelector('.toggle-sidebar-btn');
+          if(toggleBtn) toggleBtn.classList.remove('active');
+        }
+        
+        // Disparar evento de redimensionado
+        window.dispatchEvent(new Event('resize'));
+        
+        // Inicializar si es necesario
+        if(typeof init === 'function' && !window.editorInitialized){
+          init();
+          window.editorInitialized = true;
+        }
+      }, 500);
+    } else if (app) {
+      app.style.display = 'block';
+      if(typeof init === 'function' && !window.editorInitialized){
+        init();
+        window.editorInitialized = true;
+      }
+    }
   }
 
 init();
