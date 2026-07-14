@@ -1933,7 +1933,8 @@
       image: null,
       order: 1,
       branch: '',
-      branchOrder: 1
+      branchOrder: 1,
+      uchronyId: ''
     };
     return { id: id, name: 'Mi primera línea de tiempo', nodes: nodes, updatedAt: Date.now() };
   }
@@ -2504,7 +2505,7 @@
       y: cy - 75 + Math.floor(occupied/4) * 60,
       title: 'Nuevo nodo raíz', date: '', text: '',
       font: "'Space Grotesk', sans-serif", color: ACCENTS[occupied % ACCENTS.length],
-      image: null, order: null, branch: '', branchOrder: null
+      image: null, order: null, branch: '', branchOrder: null, uchronyId: ''
     };
     renderAll(); selectNode(id); scheduleSave();
   }
@@ -2521,7 +2522,7 @@
       x: parent.x + offsetX, y: parent.y + 230,
       title: 'Nueva bifurcación', date: '', text: '',
       font: parent.font, color: ACCENTS[(siblings.length+1) % ACCENTS.length],
-      image: null, order: null, branch: '', branchOrder: null
+      image: null, order: null, branch: '', branchOrder: null, uchronyId: ''
     };
     renderAll(); selectNode(id); scheduleSave();
   }
@@ -2686,7 +2687,20 @@
     document.getElementById('f-title').value = node.title || '';
     document.getElementById('f-text').value = node.text || '';
     document.getElementById('f-order').value = node.order || '';
-    document.getElementById('f-branch').value = node.branch || '';
+    
+    // Usar uchronyId en lugar de branch para el select
+    var selectedUchronyId = node.uchronyId || '';
+    if(!selectedUchronyId && node.branch){
+      // Buscar la ucronía por nombre si no hay uchronyId
+      ensureUchronies();
+      var found = state.timeline.uchronies.find(function(u){
+        return u.name === node.branch;
+      });
+      if(found){
+        selectedUchronyId = found.id;
+      }
+    }
+    document.getElementById('f-branch').value = selectedUchronyId;
     document.getElementById('f-branch-order').value = node.branchOrder || '';
     document.getElementById('f-font').value = node.font || "'Space Grotesk', sans-serif";
     renderSwatches(node);
@@ -2745,7 +2759,21 @@
   document.getElementById('f-order').addEventListener('blur', commitFieldEdit);
   document.getElementById('f-branch').addEventListener('input', function(e){
     var n = currentNode(); if(!n) return;
-    trackFieldChange(); n.branch = e.target.value;
+    trackFieldChange(); 
+    // Ahora el select usa IDs, no nombres
+    n.uchronyId = e.target.value || '';
+    // Actualizar branch y branchOrder basado en la ucronía seleccionada
+    if(n.uchronyId){
+      ensureUchronies();
+      var u = state.timeline.uchronies.find(function(item){ return item.id === n.uchronyId; });
+      if(u){
+        n.branch = u.name;
+        n.branchOrder = u.order;
+      }
+    } else {
+      n.branch = '';
+      n.branchOrder = null;
+    }
     scheduleSave();
   });
   document.getElementById('f-branch').addEventListener('blur', commitFieldEdit);
