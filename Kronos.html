@@ -2901,14 +2901,17 @@
 
   /* ============ SIDEBAR TOGGLE ============ */
   var sidebarOpen = true;
-  document.getElementById('btn-toggle-sidebar').addEventListener('click', function(){
-    sidebarOpen = !sidebarOpen;
-    if(sidebarOpen){
-      document.getElementById('sidebar').classList.remove('closed');
-    } else {
-      document.getElementById('sidebar').classList.add('closed');
-    }
-  });
+  var toggleBtn = document.getElementById('btn-toggle-sidebar');
+  if(toggleBtn){
+    toggleBtn.addEventListener('click', function(){
+      sidebarOpen = !sidebarOpen;
+      if(sidebarOpen){
+        document.getElementById('sidebar').classList.remove('closed');
+      } else {
+        document.getElementById('sidebar').classList.add('closed');
+      }
+    });
+  }
   function closeSidebarMobile(){
     if(window.innerWidth <= 768){
       document.getElementById('sidebar').classList.add('closed');
@@ -5623,7 +5626,12 @@
       var wasPresenting = isPresenting;
       originalStartPresentation();
 
+      // Auto-close sidebar when entering presentation mode
       if(!wasPresenting && isPresenting){
+        var sidebar = document.getElementById('sidebar');
+        if(sidebar && !sidebar.classList.contains('closed')){
+          sidebar.classList.add('closed');
+        }
         playThemeMusic();
       } else if(wasPresenting && !isPresenting){
         stopThemeMusic();
@@ -5644,39 +5652,5 @@
 
 init();
 })();
-
-// Fix sidebar toggle button functionality
-(function(){
-  var btn = document.getElementById('btn-toggle-sidebar');
-  var panelBtn = document.getElementById('toggle-sidebar-panel');
-  
-  if(btn){
-    btn.addEventListener('click', function(){
-      var sidebar = document.getElementById('sidebar');
-      if(sidebar){
-        sidebar.classList.toggle('closed');
-      }
-    });
-  }
-  
-  if(panelBtn){
-    panelBtn.addEventListener('click', function(){
-      var sidebar = document.getElementById('sidebar');
-      if(sidebar){
-        sidebar.classList.toggle('closed');
-      }
-    });
-  }
-  
-  // Auto-close sidebar on presentation
-  setTimeout(function(){
-    var sidebar = document.getElementById('sidebar');
-    if(sidebar && !sidebar.classList.contains('closed')){
-      sidebar.classList.add('closed');
-    }
-  }, 500);
-})();
-</script><button id="toggle-sidebar-panel" type="button" class="panel-float-toggle" title="Cerrar menú lateral">‹</button>
-
-
+</script>
 </body></html>
