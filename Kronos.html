@@ -5721,40 +5721,25 @@
     }
   })();
 
-  // Función para entrar al editor
-  function enterEditor(){
-    var welcomeScreen = document.getElementById('welcome-screen');
-    var app = document.getElementById('app');
-    
-    if (welcomeScreen) {
-      welcomeScreen.style.opacity = '0';
-      setTimeout(function() {
-        welcomeScreen.style.display = 'none';
-        if (app) {
-          app.style.display = 'block';
-          app.style.visibility = 'visible';
-          app.style.opacity = '1';
-        }
-        
-        // Cerrar panel lateral al entrar
-        var sidebar = document.querySelector('.sidebar-left');
-        if (sidebar) {
-          sidebar.classList.add('closed');
-          var toggleBtn = document.querySelector('.toggle-sidebar-btn');
-          if(toggleBtn) toggleBtn.classList.remove('active');
-        }
-        
-        // Disparar evento de redimensionado
-        window.dispatchEvent(new Event('resize'));
-        
-        // Forzar redraw de canvas si existe
-        if(typeof drawTimeline === 'function') drawTimeline();
-      }, 500);
-    } else if (app) {
-      app.style.display = 'block';
-      app.style.visibility = 'visible';
-      app.style.opacity = '1';
+init();
+})();
+
+// Función global para entrar al editor
+function enterEditor(){
+  var welcomeScreen = document.getElementById('welcome-screen');
+  var app = document.getElementById('app');
+  
+  if (welcomeScreen) {
+    welcomeScreen.style.opacity = '0';
+    setTimeout(function() {
+      welcomeScreen.style.display = 'none';
+      if (app) {
+        app.style.display = 'block';
+        app.style.visibility = 'visible';
+        app.style.opacity = '1';
+      }
       
+      // Cerrar panel lateral al entrar
       var sidebar = document.querySelector('.sidebar-left');
       if (sidebar) {
         sidebar.classList.add('closed');
@@ -5762,12 +5747,27 @@
         if(toggleBtn) toggleBtn.classList.remove('active');
       }
       
+      // Disparar evento de redimensionado
       window.dispatchEvent(new Event('resize'));
+      
+      // Forzar redraw de canvas si existe
       if(typeof drawTimeline === 'function') drawTimeline();
+    }, 500);
+  } else if (app) {
+    app.style.display = 'block';
+    app.style.visibility = 'visible';
+    app.style.opacity = '1';
+    
+    var sidebar = document.querySelector('.sidebar-left');
+    if (sidebar) {
+      sidebar.classList.add('closed');
+      var toggleBtn = document.querySelector('.toggle-sidebar-btn');
+      if(toggleBtn) toggleBtn.classList.remove('active');
     }
+    
+    window.dispatchEvent(new Event('resize'));
+    if(typeof drawTimeline === 'function') drawTimeline();
   }
-
-init();
-})();
+}
 </script>
 </body></html>
