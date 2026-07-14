@@ -261,6 +261,9 @@
     z-index:30;
     transition: transform .25s ease;
   }
+  #sidebar.closed{
+    transform: translateX(-100%);
+  }
   .brand{
     padding: 18px 18px 14px 18px;
     border-bottom: 1px solid var(--panel-border);
@@ -957,7 +960,7 @@
       box-shadow: 8px 0 30px rgba(0,0,0,0.4);
       width: 280px; min-width:280px;
     }
-    #sidebar.open{ transform: translateX(0); }
+    #sidebar:not(.closed){ transform: translateX(0); }
     #editor{
       width: 100%; min-width:100%;
     }
@@ -1554,12 +1557,13 @@
       }
 
       .theme-card[data-theme="steampunk"] .theme-preview::after{
-        content:'';
+        content:'⚙';
         position:absolute;
-        inset:9px;
-        border-radius:50%;
-        border:2px solid #e8b254;
-        background: radial-gradient(circle, #c97932 0 22%, transparent 24%);
+        top:50%; left:50%;
+        transform:translate(-50%, -50%);
+        font-size:24px;
+        color:#e8b254;
+        text-shadow:0 0 8px rgba(232,178,84,0.6);
       }
     </style></head>
 <body>
@@ -2885,12 +2889,21 @@
     window.addEventListener('mouseup', function(){ isPanning=false; scroller.classList.remove('panning'); });
   })();
 
-  /* ============ MOBILE SIDEBAR TOGGLE ============ */
+  /* ============ SIDEBAR TOGGLE ============ */
+  var sidebarOpen = true;
   document.getElementById('btn-toggle-sidebar').addEventListener('click', function(){
-    document.getElementById('sidebar').classList.toggle('open');
+    sidebarOpen = !sidebarOpen;
+    if(sidebarOpen){
+      document.getElementById('sidebar').classList.remove('closed');
+    } else {
+      document.getElementById('sidebar').classList.add('closed');
+    }
   });
   function closeSidebarMobile(){
-    if(window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+    if(window.innerWidth <= 768){
+      document.getElementById('sidebar').classList.add('closed');
+      sidebarOpen = false;
+    }
   }
 
   /* ============ CONFIRM MODAL ============ */
