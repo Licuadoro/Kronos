@@ -8,6 +8,59 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Poppins:wght@400;600&amp;family=Georgia&amp;display=swap&amp;family=VT323&amp;family=Share+Tech+Mono&amp;family=Orbitron:wght@400;600;700&amp;family=Rajdhani:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 <script type="text/javascript" id="www-widgetapi-script" src="https://www.youtube.com/s/player/4918c89a/www-widgetapi.vflset/www-widgetapi.js" async=""></script><script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
+  /* ===== PANTALLA DE BIENVENIDA ===== */
+  #welcome-screen{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:#000;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:99999;
+    font-family:'Times New Roman',Times,serif;
+  }
+  #welcome-screen h1{
+    color:#fff;
+    font-size:5rem;
+    margin:0 0 1rem 0;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+  }
+  #welcome-screen p{
+    color:#fff;
+    font-size:1.5rem;
+    margin:0 0 3rem 0;
+    font-style:italic;
+    opacity:0.8;
+  }
+  #welcome-screen .btn-group{
+    display:flex;
+    gap:2rem;
+  }
+  #welcome-screen button{
+    padding:1rem 2.5rem;
+    font-size:1.1rem;
+    font-family:'Times New Roman',Times,serif;
+    border:2px solid #fff;
+    background:transparent;
+    color:#fff;
+    cursor:pointer;
+    transition:all 0.3s ease;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+  }
+  #welcome-screen button:hover{
+    background:#fff;
+    color:#000;
+  }
+  #welcome-screen.hidden{
+    display:none;
+  }
+  
   :root{
     --bg: #0e2a47;
     --bg-deep: #0a2039;
@@ -1567,7 +1620,17 @@
       }
     </style></head>
 <body>
-<div id="app">
+<!-- PANTALLA DE BIENVENIDA -->
+<div id="welcome-screen">
+  <h1>Kronos</h1>
+  <p>Crea líneas del tiempo, crea historias con vida</p>
+  <div class="btn-group">
+    <button onclick="alert('¡Próximamente!')">LICUADO</button>
+    <button onclick="enterEditor()">Entra al editor</button>
+  </div>
+</div>
+
+<div id="app" style="display:none;">
 
   <aside id="sidebar">
     <div class="brand">
@@ -5630,6 +5693,12 @@
     };
 
     startPresentation = function(){
+      // Cerrar el panel lateral izquierdo al presentar
+      var sidebar = document.getElementById('sidebar');
+      if(sidebar && !sidebar.classList.contains('closed')){
+        sidebar.classList.add('closed');
+      }
+
       var wasPresenting = isPresenting;
       originalStartPresentation();
 
@@ -5651,6 +5720,13 @@
       });
     }
   })();
+
+  // Función para entrar al editor
+  function enterEditor(){
+    document.getElementById('welcome-screen').classList.add('hidden');
+    document.getElementById('app').style.display = '';
+    init();
+  }
 
 init();
 })();
