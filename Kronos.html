@@ -3175,6 +3175,12 @@
       return;
     }
 
+    // Auto-close sidebar when entering presentation mode
+    var sidebar = document.getElementById('sidebar');
+    if(sidebar && !sidebar.classList.contains('closed')){
+      sidebar.classList.add('closed');
+    }
+
     var orderedNodes = buildPresentationSequence();
 
     if(orderedNodes.length === 0){
@@ -5626,12 +5632,7 @@
       var wasPresenting = isPresenting;
       originalStartPresentation();
 
-      // Auto-close sidebar when entering presentation mode
       if(!wasPresenting && isPresenting){
-        var sidebar = document.getElementById('sidebar');
-        if(sidebar && !sidebar.classList.contains('closed')){
-          sidebar.classList.add('closed');
-        }
         playThemeMusic();
       } else if(wasPresenting && !isPresenting){
         stopThemeMusic();
