@@ -3179,6 +3179,7 @@
     var sidebar = document.getElementById('sidebar');
     if(sidebar && !sidebar.classList.contains('closed')){
       sidebar.classList.add('closed');
+      sidebarOpen = false; // Sync the state variable
     }
 
     var orderedNodes = buildPresentationSequence();
