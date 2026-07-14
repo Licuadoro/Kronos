@@ -5747,18 +5747,23 @@
         // Disparar evento de redimensionado
         window.dispatchEvent(new Event('resize'));
         
-        // Inicializar si es necesario
-        if(typeof init === 'function' && !window.editorInitialized){
-          init();
-          window.editorInitialized = true;
-        }
+        // Forzar redraw de canvas si existe
+        if(typeof drawTimeline === 'function') drawTimeline();
       }, 500);
     } else if (app) {
       app.style.display = 'block';
-      if(typeof init === 'function' && !window.editorInitialized){
-        init();
-        window.editorInitialized = true;
+      app.style.visibility = 'visible';
+      app.style.opacity = '1';
+      
+      var sidebar = document.querySelector('.sidebar-left');
+      if (sidebar) {
+        sidebar.classList.add('closed');
+        var toggleBtn = document.querySelector('.toggle-sidebar-btn');
+        if(toggleBtn) toggleBtn.classList.remove('active');
       }
+      
+      window.dispatchEvent(new Event('resize'));
+      if(typeof drawTimeline === 'function') drawTimeline();
     }
   }
 
