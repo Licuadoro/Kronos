@@ -1666,6 +1666,7 @@
     <div id="topbar">
       <div class="topbar-left">
         <button class="btn small sidebar-toggle icon-btn" id="btn-toggle-sidebar" title="Menú">☰</button>
+        <button class="btn small icon-btn" id="btn-home" onclick="goToWelcome()" title="Ir a Inicio">🏠</button>
         <input id="tl-title" value="" spellcheck="false">
         <button class="btn small icon-btn" id="btn-present" title="Presentar línea de tiempo" data-theme-music-hooked="true">▶</button>
       </div>
@@ -5767,6 +5768,25 @@ function enterEditor(){
     
     window.dispatchEvent(new Event('resize'));
     if(typeof drawTimeline === 'function') drawTimeline();
+  }
+}
+
+// Función global para volver a la pantalla de bienvenida
+function goToWelcome(){
+  var welcomeScreen = document.getElementById('welcome-screen');
+  var app = document.getElementById('app');
+  
+  if (app) {
+    app.style.display = 'none';
+  }
+  
+  if (welcomeScreen) {
+    welcomeScreen.style.display = 'flex';
+    setTimeout(function() {
+      welcomeScreen.style.opacity = '1';
+    }, 10);
+  } else {
+    location.reload();
   }
 }
 </script>
