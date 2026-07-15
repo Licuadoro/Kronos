@@ -2592,15 +2592,17 @@
     var parent = state.timeline.nodes[parentId];
     if(!parent) return;
     pushUndo();
+    
+    // Primero sincronizar el padre para asegurar que uchronyIds esté actualizado
+    if(parent.uchronyId && (!parent.uchronyIds || parent.uchronyIds.length === 0)){
+      parent.uchronyIds = [parent.uchronyId];
+    }
+    
     var siblings = nodeArray().filter(function(n){ return n.parentId === parentId; });
     var id = uid();
     var offsetX = siblings.length * 260 - (siblings.length>0 ? 60 : 0);
     
     // Heredar la ucronía del padre si existe
-    // Asegurar que uchronyIds esté sincronizado con uchronyId
-    if(parent.uchronyId && (!parent.uchronyIds || parent.uchronyIds.length === 0)){
-      parent.uchronyIds = [parent.uchronyId];
-    }
     var inheritedUchronyId = parent.uchronyId || '';
     var inheritedUchronyIds = parent.uchronyIds && parent.uchronyIds.length > 0 ? parent.uchronyIds.slice() : [];
     
@@ -2612,14 +2614,8 @@
       image: null, order: null, branch: '', branchOrder: null, uchronyId: inheritedUchronyId, uchronyIds: inheritedUchronyIds
     };
     
-    // Si el padre tiene una ucronía, también establecer branch y branchOrder
-    if(inheritedUchronyId && state.timeline.uchronies){
-      var uchrony = state.timeline.uchronies.find(function(u){ return u.id === inheritedUchronyId; });
-      if(uchrony){
-        state.timeline.nodes[id].branch = uchrony.name;
-        state.timeline.nodes[id].branchOrder = uchrony.order;
-      }
-    }
+    // Sincronizar branch y branchOrder inmediatamente
+    syncAllMultiUchronies();
     
     renderAll(); selectNode(id); scheduleSave();
   }
