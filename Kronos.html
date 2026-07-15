@@ -2597,6 +2597,10 @@
     var offsetX = siblings.length * 260 - (siblings.length>0 ? 60 : 0);
     
     // Heredar la ucronía del padre si existe
+    // Asegurar que uchronyIds esté sincronizado con uchronyId
+    if(parent.uchronyId && (!parent.uchronyIds || parent.uchronyIds.length === 0)){
+      parent.uchronyIds = [parent.uchronyId];
+    }
     var inheritedUchronyId = parent.uchronyId || '';
     var inheritedUchronyIds = parent.uchronyIds && parent.uchronyIds.length > 0 ? parent.uchronyIds.slice() : [];
     
@@ -2607,6 +2611,16 @@
       font: parent.font, color: ACCENTS[(siblings.length+1) % ACCENTS.length],
       image: null, order: null, branch: '', branchOrder: null, uchronyId: inheritedUchronyId, uchronyIds: inheritedUchronyIds
     };
+    
+    // Si el padre tiene una ucronía, también establecer branch y branchOrder
+    if(inheritedUchronyId && state.timeline.uchronies){
+      var uchrony = state.timeline.uchronies.find(function(u){ return u.id === inheritedUchronyId; });
+      if(uchrony){
+        state.timeline.nodes[id].branch = uchrony.name;
+        state.timeline.nodes[id].branchOrder = uchrony.order;
+      }
+    }
+    
     renderAll(); selectNode(id); scheduleSave();
   }
 
@@ -2840,26 +2854,10 @@
     scheduleSave();
   });
   document.getElementById('f-order').addEventListener('blur', commitFieldEdit);
-  document.getElementById('f-branch').addEventListener('input', function(e){
-    var n = currentNode(); if(!n) return;
-    trackFieldChange(); 
-    // Ahora el select usa IDs, no nombres
-    n.uchronyId = e.target.value || '';
-    // Actualizar branch y branchOrder basado en la ucronía seleccionada
-    if(n.uchronyId){
-      ensureUchronies();
-      var u = state.timeline.uchronies.find(function(item){ return item.id === n.uchronyId; });
-      if(u){
-        n.branch = u.name;
-        n.branchOrder = u.order;
-      }
-    } else {
-      n.branch = '';
-      n.branchOrder = null;
-    }
-    scheduleSave();
-  });
-  document.getElementById('f-branch').addEventListener('blur', commitFieldEdit);
+  
+  // Listener para el select de ucronías (sistema múltiple)
+  // Nota: El listener real está en upgradeEditorSelectToMultiple para manejar selección múltiple
+  
   document.getElementById('f-branch-order').addEventListener('input', function(e){
     var n = currentNode(); if(!n) return;
     trackFieldChange(); n.branchOrder = e.target.value ? parseInt(e.target.value) : null;
@@ -3918,9 +3916,13 @@
 
         trackFieldChange();
 
+        // Actualizar uchronyIds con las opciones seleccionadas
         node.uchronyIds = Array.prototype.slice.call(select.selectedOptions)
           .map(function(option){ return option.value; })
           .filter(Boolean);
+
+        // También actualizar uchronyId (primera ucronía seleccionada) para compatibilidad
+        node.uchronyId = node.uchronyIds[0] || '';
 
         syncNodeBranchLabels(node);
         renderNodes();
