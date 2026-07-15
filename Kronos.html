@@ -2606,7 +2606,7 @@
     var inheritedUchronyId = parent.uchronyId || '';
     var inheritedUchronyIds = parent.uchronyIds && parent.uchronyIds.length > 0 ? parent.uchronyIds.slice() : [];
     
-    state.timeline.nodes[id] = {
+    var newNode = {
       id: id, parentId: parentId,
       x: parent.x + offsetX, y: parent.y + 230,
       title: 'Nueva bifurcación', date: '', text: '',
@@ -2614,8 +2614,19 @@
       image: null, order: null, branch: '', branchOrder: null, uchronyId: inheritedUchronyId, uchronyIds: inheritedUchronyIds
     };
     
-    // Sincronizar branch y branchOrder inmediatamente
-    syncAllMultiUchronies();
+    state.timeline.nodes[id] = newNode;
+    
+    // Sincronizar branch y branchOrder inmediatamente para este nodo
+    if(inheritedUchronyIds.length > 0){
+      ensureUchronies();
+      var firstUchrony = state.timeline.uchronies.find(function(u){
+        return u.id === inheritedUchronyIds[0];
+      });
+      if(firstUchrony){
+        newNode.branch = firstUchrony.name;
+        newNode.branchOrder = firstUchrony.order;
+      }
+    }
     
     renderAll(); selectNode(id); scheduleSave();
   }
@@ -3495,6 +3506,22 @@
       });
 
       nodeArray().forEach(function(n){
+        // Normalizar primero para asegurar consistencia entre uchronyId y uchronyIds
+        normalizeNodeUchronies(n);
+        
+        // Si tiene uchronyIds, usar el primero como uchronyId principal
+        if(n.uchronyIds && n.uchronyIds.length > 0){
+          var firstUchronyId = n.uchronyIds[0];
+          var existing = state.timeline.uchronies.find(function(u){ return u.id === firstUchronyId; });
+          if(existing){
+            n.uchronyId = existing.id;
+            n.branch = existing.name;
+            n.branchOrder = existing.order;
+            return;
+          }
+        }
+        
+        // Si solo tiene uchronyId (sin uchronyIds), sincronizar normalmente
         if(n.uchronyId){
           var existing = state.timeline.uchronies.find(function(u){ return u.id === n.uchronyId; });
           if(existing){
@@ -3519,6 +3546,9 @@
           }
 
           n.uchronyId = u.id;
+          if(!n.uchronyIds || n.uchronyIds.indexOf(u.id) === -1){
+            n.uchronyIds = [u.id];
+          }
           n.branch = u.name;
           n.branchOrder = u.order;
         }
@@ -3531,18 +3561,23 @@
       if(!state.timeline) return;
 
       nodeArray().forEach(function(n){
-        if(!n.uchronyId){
+        // Primero normalizar para asegurar consistencia
+        normalizeNodeUchronies(n);
+        
+        if(!n.uchronyId || n.uchronyIds.length === 0){
           n.branch = '';
           n.branchOrder = null;
           return;
         }
 
+        // Usar la primera ucronía de uchronyIds para branch y branchOrder
         var u = state.timeline.uchronies.find(function(item){
-          return item.id === n.uchronyId;
+          return item.id === n.uchronyIds[0];
         });
 
         if(!u){
           n.uchronyId = '';
+          n.uchronyIds = [];
           n.branch = '';
           n.branchOrder = null;
           return;
