@@ -2857,7 +2857,7 @@
       n.branch = '';
       n.branchOrder = null;
     }
-    scheduleSave();
+    renderNodes(); renderConnectors(); scheduleSave();
   });
   document.getElementById('f-branch').addEventListener('blur', commitFieldEdit);
   document.getElementById('f-branch-order').addEventListener('input', function(e){
