@@ -2771,19 +2771,9 @@
     document.getElementById('f-text').value = node.text || '';
     document.getElementById('f-order').value = node.order || '';
     
-    // Usar uchronyId en lugar de branch para el select
-    var selectedUchronyId = node.uchronyId || '';
-    if(!selectedUchronyId && node.branch){
-      // Buscar la ucronía por nombre si no hay uchronyId
-      ensureUchronies();
-      var found = state.timeline.uchronies.find(function(u){
-        return u.name === node.branch;
-      });
-      if(found){
-        selectedUchronyId = found.id;
-      }
-    }
-    document.getElementById('f-branch').value = selectedUchronyId;
+    // Usar uchronyIds para el select múltiple
+    ensureUchronies();
+    normalizeNodeUchronies(node);
     document.getElementById('f-branch-order').value = node.branchOrder || '';
     document.getElementById('f-font').value = node.font || "'Space Grotesk', sans-serif";
     renderSwatches(node);
@@ -2792,6 +2782,9 @@
     var removeBtn = document.getElementById('f-img-remove');
     if(node.image){ imgPrev.src = node.image; imgPrev.style.display='block'; removeBtn.style.display='block'; }
     else { imgPrev.style.display='none'; removeBtn.style.display='none'; }
+    
+    // Renderizar el select múltiple de ucronías después de cargar todos los datos
+    renderMultiUchronySelect();
   }
 
   function renderSwatches(node){
@@ -3477,39 +3470,46 @@
         state.timeline.uchronies = [];
       }
 
-      var byName = {};
+      var byId = {};
       state.timeline.uchronies.forEach(function(u){
-        if(u && u.name) byName[u.name.trim().toLowerCase()] = u;
+        if(u && u.id) byId[u.id] = u;
       });
 
       nodeArray().forEach(function(n){
-        if(n.uchronyId){
-          var existing = state.timeline.uchronies.find(function(u){ return u.id === n.uchronyId; });
-          if(existing){
-            n.branch = existing.name;
-            n.branchOrder = existing.order;
-            return;
-          }
+        // Normalizar uchronyIds primero
+        if(Array.isArray(n.uchronyIds)){
+          n.uchronyIds = n.uchronyIds.filter(Boolean);
+        }else if(n.uchronyId){
+          n.uchronyIds = [n.uchronyId];
+        }else{
+          n.uchronyIds = [];
         }
 
-        if(n.branch && n.branch.trim()){
+        // Actualizar branch y branchOrder basado en la primera ucronía
+        if(n.uchronyIds.length > 0){
+          var firstUchrony = byId[n.uchronyIds[0]];
+          if(firstUchrony){
+            n.branch = firstUchrony.name;
+            n.branchOrder = firstUchrony.order;
+          }
+        }else{
+          n.branch = '';
+          n.branchOrder = null;
+        }
+
+        // Migrar legacy: si tiene branch pero no uchronyId, buscar por nombre
+        if(n.branch && n.branch.trim() && n.uchronyIds.length === 0){
           var key = n.branch.trim().toLowerCase();
-          var u = byName[key];
-
-          if(!u){
-            u = {
-              id: makeUchronyId(),
-              name: n.branch.trim(),
-              order: n.branchOrder || state.timeline.uchronies.length + 1
-            };
-            state.timeline.uchronies.push(u);
-            byName[key] = u;
+          var found = state.timeline.uchronies.find(function(u){
+            return u.name.trim().toLowerCase() === key;
+          });
+          if(found){
+            n.uchronyIds = [found.id];
+            n.uchronyId = found.id;
           }
-
-          n.uchronyId = u.id;
-          n.branch = u.name;
-          n.branchOrder = u.order;
         }
+
+        n.uchronyId = n.uchronyIds[0] || '';
       });
 
       return state.timeline.uchronies;
@@ -3565,14 +3565,20 @@
         ensureUchronies();
 
         var nextOrder = state.timeline.uchronies.length + 1;
-        state.timeline.uchronies.push({
+        var newUchrony = {
           id: makeUchronyId(),
           name: 'Nueva ucronía ' + nextOrder,
           order: nextOrder
-        });
+        };
+        state.timeline.uchronies.push(newUchrony);
 
         renderUchronyManager();
-        renderMultiUchronySelect();
+        syncAllMultiUchronies();
+        renderNodes();
+        renderConnectors();
+        if(currentNode()){
+          renderMultiUchronySelect();
+        }
         scheduleSave();
       });
     }
@@ -3902,7 +3908,11 @@
 
       return sequence;
     };
-  })();
+    
+    // Exponer funciones necesarias globalmente
+    window.normalizeNodeUchronies = normalizeNodeUchronies;
+    window.renderMultiUchronySelect = renderMultiUchronySelect;
+    window.getSortedUchronies = getSortedUchronies;
   })();
    /* ============ FINAL THEME POLISH: ADAPTIVE GLASS, THEME MUSIC, STEAMPUNK ============ */
   (function(){
