@@ -2840,25 +2840,7 @@
     scheduleSave();
   });
   document.getElementById('f-order').addEventListener('blur', commitFieldEdit);
-  document.getElementById('f-branch').addEventListener('input', function(e){
-    var n = currentNode(); if(!n) return;
-    trackFieldChange(); 
-    // Ahora el select usa IDs, no nombres
-    n.uchronyId = e.target.value || '';
-    // Actualizar branch y branchOrder basado en la ucronía seleccionada
-    if(n.uchronyId){
-      ensureUchronies();
-      var u = state.timeline.uchronies.find(function(item){ return item.id === n.uchronyId; });
-      if(u){
-        n.branch = u.name;
-        n.branchOrder = u.order;
-      }
-    } else {
-      n.branch = '';
-      n.branchOrder = null;
-    }
-    renderNodes(); renderConnectors(); scheduleSave();
-  });
+  // El evento 'input' para f-branch ahora lo maneja upgradeEditorSelectToMultiple()
   document.getElementById('f-branch').addEventListener('blur', commitFieldEdit);
   document.getElementById('f-branch-order').addEventListener('input', function(e){
     var n = currentNode(); if(!n) return;
@@ -3590,7 +3572,7 @@
         });
 
         renderUchronyManager();
-        renderUchronySelect();
+        renderMultiUchronySelect();
         scheduleSave();
       });
     }
@@ -3643,7 +3625,7 @@
           syncNodesFromUchronies();
           renderNodes();
           renderConnectors();
-          renderUchronySelect();
+          renderMultiUchronySelect();
           scheduleSave();
         });
 
@@ -3658,7 +3640,7 @@
           syncNodesFromUchronies();
           renderNodes();
           renderConnectors();
-          renderUchronySelect();
+          renderMultiUchronySelect();
           scheduleSave();
         });
 
@@ -3674,7 +3656,7 @@
           renderUchronyManager();
           renderNodes();
           renderConnectors();
-          renderUchronySelect();
+          renderMultiUchronySelect();
           scheduleSave();
         });
 
@@ -3685,7 +3667,7 @@
           renderUchronyManager();
           renderNodes();
           renderConnectors();
-          renderUchronySelect();
+          renderMultiUchronySelect();
           scheduleSave();
         });
 
@@ -3709,7 +3691,7 @@
           renderUchronyManager();
           renderNodes();
           renderConnectors();
-          renderUchronySelect();
+          renderMultiUchronySelect();
           scheduleSave();
         });
 
@@ -3722,86 +3704,9 @@
       });
     }
 
-    function installEditorUchronySelect(){
-      var branchInput = document.getElementById('f-branch');
-      if(!branchInput || branchInput.tagName === 'SELECT') return;
+    // installEditorUchronySelect() eliminado: ahora se usa upgradeEditorSelectToMultiple() para soporte multi-ucronía
 
-      var branchField = branchInput.closest('.field');
-      if(branchField){
-        branchField.innerHTML = `
-          <label>Ucronía</label>
-          <select id="f-branch"></select>
-        `;
-      }
-
-      var branchOrderInput = document.getElementById('f-branch-order');
-      var branchOrderField = branchOrderInput ? branchOrderInput.closest('.field') : null;
-      if(branchOrderField){
-        branchOrderField.style.display = 'none';
-      }
-
-      var select = document.getElementById('f-branch');
-      if(!select) return;
-
-      select.addEventListener('change', function(e){
-        var n = currentNode();
-        if(!n) return;
-
-        trackFieldChange();
-
-        n.uchronyId = e.target.value || '';
-
-        if(!n.uchronyId){
-          n.branch = '';
-          n.branchOrder = null;
-        }else{
-          var u = state.timeline.uchronies.find(function(item){
-            return item.id === n.uchronyId;
-          });
-
-          if(u){
-            n.branch = u.name;
-            n.branchOrder = u.order;
-          }
-        }
-
-        renderNodes();
-        renderConnectors();
-        scheduleSave();
-        commitFieldEdit();
-      });
-    }
-
-    function renderUchronySelect(){
-      var select = document.getElementById('f-branch');
-      if(!select || select.tagName !== 'SELECT' || !state.timeline) return;
-
-      ensureUchronies();
-
-      var n = currentNode();
-      var selectedId = n ? n.uchronyId || '' : '';
-
-      if(n && !selectedId && n.branch){
-        var found = state.timeline.uchronies.find(function(u){
-          return u.name === n.branch;
-        });
-        if(found){
-          selectedId = found.id;
-          n.uchronyId = found.id;
-        }
-      }
-
-      select.innerHTML = '<option value="">Sin ucronía</option>';
-
-      sortedUchronies().forEach(function(u){
-        var option = document.createElement('option');
-        option.value = u.id;
-        option.textContent = (u.order ? u.order + '. ' : '') + u.name;
-        select.appendChild(option);
-      });
-
-      select.value = selectedId;
-    }
+    // renderUchronySelect() eliminado: ahora se usa renderMultiUchronySelect() para soporte multi-ucronía
 
     var originalMakeDefaultTimeline = makeDefaultTimeline;
     makeDefaultTimeline = function(){
@@ -3818,9 +3723,8 @@
       syncNodesFromUchronies();
       originalRenderAll();
       installUchronyManager();
-      installEditorUchronySelect();
       renderUchronyManager();
-      renderUchronySelect();
+      renderMultiUchronySelect();
     };
 
     var originalOpenEditorFor = openEditorFor;
@@ -3828,8 +3732,7 @@
       ensureUchronies();
       syncNodesFromUchronies();
       originalOpenEditorFor(id);
-      installEditorUchronySelect();
-      renderUchronySelect();
+      renderMultiUchronySelect();
     };
 
     var originalBuildPresentationSequence = buildPresentationSequence;
@@ -3841,7 +3744,6 @@
 
     installDefaultThemeColors();
     installUchronyManager();
-    installEditorUchronySelect();
   /* ============ MULTI-UCHRONY NODES ============ */
   (function(){
     function getSortedUchronies(){
