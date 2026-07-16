@@ -1737,7 +1737,7 @@
       </div>
       <div class="field">
           <label>Ucronías</label>
-          <select id="f-branch" multiple="" size="3" title="Mantén Ctrl o Cmd para elegir varias ucronías" data-multi-uchrony-ready="true"><option value="">Sin ucronía</option><option value="u_e66infs3lwc">1. Ucronía principal</option></select>
+          <select id="f-branch" multiple="" size="3" title="Mantén Ctrl o Cmd para elegir varias ucronías"><option value="">Sin ucronía</option></select>
         <div id="multi-uchrony-hint" style="font-size: 11px; color: var(--chalk-dim); line-height: 1.4; margin-top: 6px;">Puedes seleccionar varias ucronías para crear intersecciones.</div></div>
       <div class="field" style="display: none;">
         <label>Orden de la ucronía</label>
@@ -3518,26 +3518,35 @@
     function syncNodesFromUchronies(){
       if(!state.timeline) return;
 
+      var byId = {};
+      state.timeline.uchronies.forEach(function(u){
+        if(u && u.id) byId[u.id] = u;
+      });
+
       nodeArray().forEach(function(n){
-        if(!n.uchronyId){
+        normalizeNodeUchronies(n);
+
+        if(n.uchronyIds.length === 0){
           n.branch = '';
           n.branchOrder = null;
+          n.uchronyId = '';
           return;
         }
 
-        var u = state.timeline.uchronies.find(function(item){
-          return item.id === n.uchronyId;
-        });
+        // Usar la primera ucronía del array para branch/branchOrder
+        var firstUchrony = byId[n.uchronyIds[0]];
 
-        if(!u){
+        if(!firstUchrony){
+          n.uchronyIds = [];
           n.uchronyId = '';
           n.branch = '';
           n.branchOrder = null;
           return;
         }
 
-        n.branch = u.name;
-        n.branchOrder = u.order;
+        n.branch = firstUchrony.name;
+        n.branchOrder = firstUchrony.order;
+        n.uchronyId = n.uchronyIds[0];
       });
     }
 
@@ -3817,8 +3826,10 @@
         select.parentNode.appendChild(hint);
       }
 
-      if(select.dataset.multiUchronyReady === 'true') return;
-      select.dataset.multiUchronyReady = 'true';
+      // Remover listeners previos clonando el elemento
+      var newSelect = select.cloneNode(true);
+      select.parentNode.replaceChild(newSelect, select);
+      select = newSelect;
 
       select.addEventListener('change', function(){
         var node = currentNode();
