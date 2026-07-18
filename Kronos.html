@@ -5004,8 +5004,52 @@
     function playThemeMusic(){
       var id = musicIdForTheme();
       var frame = ensureMusicFrame();
-      frame.src = 'https://www.youtube.com/embed/' + id +
-        '?autoplay=1&controls=0&disablekb=1&fs=0&loop=1&modestbranding=1&playsinline=1&playlist=' + id + '&rel=0';
+      
+      // Usar la API de YouTube si está disponible
+      if(window.YT && window.YT.Player){
+        // Destruir el player anterior si existe
+        if(epicPlayer && typeof epicPlayer.destroy === 'function'){
+          try { epicPlayer.destroy(); } catch(e){}
+        }
+        
+        loadedMusicTheme = activeThemeForMusic();
+        
+        epicPlayer = new YT.Player('epic-music-player', {
+          videoId: id,
+          height: '1',
+          width: '1',
+          playerVars: {
+            autoplay: 1,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            loop: 1,
+            modestbranding: 1,
+            playsinline: 1,
+            playlist: id,
+            rel: 0
+          },
+          events: {
+            onReady: function(){
+              epicReady = true;
+              epicPlayer.setVolume(55);
+              if(epicMuted) epicPlayer.mute();
+              else epicPlayer.unMute();
+              try { epicPlayer.playVideo(); } catch(e){}
+            },
+            onStateChange: function(event){
+              if(window.YT && event.data === YT.PlayerState.ENDED){
+                epicPlayer.seekTo(0, true);
+                epicPlayer.playVideo();
+              }
+            }
+          }
+        });
+      } else {
+        // Fallback: crear iframe con autoplay
+        frame.src = 'https://www.youtube.com/embed/' + id +
+          '?autoplay=1&controls=0&disablekb=1&fs=0&loop=1&modestbranding=1&playsinline=1&playlist=' + id + '&rel=0';
+      }
 
       var btn = document.getElementById('btn-epic-music');
       if(btn){
@@ -5018,6 +5062,14 @@
     function stopThemeMusic(){
       var frame = ensureMusicFrame();
       frame.removeAttribute('src');
+
+      // Detener el player de la API si existe
+      if(epicPlayer && epicReady){
+        try {
+          epicPlayer.pauseVideo();
+          epicPlayer.seekTo(0, true);
+        } catch(e){}
+      }
 
       var btn = document.getElementById('btn-epic-music');
       if(btn) btn.hidden = true;
