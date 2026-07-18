@@ -1737,8 +1737,9 @@
       </div>
       <div class="field">
           <label>Ucronías</label>
-          <select id="f-branch" multiple="" size="3" title="Mantén Ctrl o Cmd para elegir varias ucronías" data-multi-uchrony-ready="true"><option value="">Sin ucronía</option><option value="u_e66infs3lwc">1. Ucronía principal</option></select>
-        <div id="multi-uchrony-hint" style="font-size: 11px; color: var(--chalk-dim); line-height: 1.4; margin-top: 6px;">Puedes seleccionar varias ucronías para crear intersecciones.</div></div>
+          <select id="f-branch" multiple="" size="3" title="Mantén Ctrl (Windows/Linux) o Cmd (Mac) presionado para seleccionar múltiples ucronías" data-multi-uchrony-ready="true"><option value="">Sin ucronía</option><option value="u_e66infs3lwc">1. Ucronía principal</option></select>
+        <div id="multi-uchrony-hint" style="font-size: 11px; color: var(--chalk-dim); line-height: 1.4; margin-top: 6px;">💡 <strong>Cómo seleccionar varias ucronías:</strong> Mantén presionada la tecla <kbd>Ctrl</kbd> (Windows/Linux) o <kbd>Cmd</kbd> (Mac) y haz clic en las ucronías que quieras agregar. También puedes usar <kbd>Shift</kbd> para seleccionar un rango continuo.</div>
+        <div style="font-size: 10px; color: var(--chalk-dim); margin-top: 4px; font-style: italic;">Ejemplo: Ctrl+clic en "Ucronía A" y luego Ctrl+clic en "Ucronía B" para asignar ambas al nodo.</div></div>
       <div class="field" style="display: none;">
         <label>Orden de la ucronía</label>
         <input type="number" id="f-branch-order" min="1" step="1" placeholder="1, 2, 3...">
@@ -5003,16 +5004,26 @@
 
     function playThemeMusic(){
       var id = musicIdForTheme();
-      var frame = ensureMusicFrame();
       
       // Usar la API de YouTube si está disponible
       if(window.YT && window.YT.Player){
         // Destruir el player anterior si existe
         if(epicPlayer && typeof epicPlayer.destroy === 'function'){
           try { epicPlayer.destroy(); } catch(e){}
+          epicPlayer = null;
+          epicReady = false;
         }
         
         loadedMusicTheme = activeThemeForMusic();
+        
+        // Asegurar que el contenedor existe y es un div (no un iframe)
+        var container = document.getElementById('epic-music-player');
+        if(!container || container.tagName !== 'DIV'){
+          if(container) container.remove();
+          container = document.createElement('div');
+          container.id = 'epic-music-player';
+          (document.getElementById('canvas-wrap') || document.body).appendChild(container);
+        }
         
         epicPlayer = new YT.Player('epic-music-player', {
           videoId: id,
@@ -5030,12 +5041,19 @@
             rel: 0
           },
           events: {
-            onReady: function(){
+            onReady: function(event){
               epicReady = true;
-              epicPlayer.setVolume(55);
-              if(epicMuted) epicPlayer.mute();
-              else epicPlayer.unMute();
-              try { epicPlayer.playVideo(); } catch(e){}
+              var target = event.target;
+              target.setVolume(55);
+              if(epicMuted) target.mute();
+              else target.unMute();
+              try { target.playVideo(); } catch(e){ 
+                console.log('[Música] Error al reproducir:', e);
+              }
+              console.log('[Música] Player listo, reproduciendo:', id);
+            },
+            onError: function(event){
+              console.error('[Música] Error del player:', event.data);
             },
             onStateChange: function(event){
               if(window.YT && event.data === YT.PlayerState.ENDED){
@@ -5047,8 +5065,21 @@
         });
       } else {
         // Fallback: crear iframe con autoplay
+        var frame = document.getElementById('epic-music-player');
+        if(!frame || frame.tagName !== 'IFRAME'){
+          if(frame) frame.remove();
+          frame = document.createElement('iframe');
+          frame.id = 'epic-music-player';
+          frame.width = '1';
+          frame.height = '1';
+          frame.frameBorder = '0';
+          frame.allow = 'autoplay; encrypted-media';
+          frame.title = 'Música épica de la presentación';
+          (document.getElementById('canvas-wrap') || document.body).appendChild(frame);
+        }
         frame.src = 'https://www.youtube.com/embed/' + id +
           '?autoplay=1&controls=0&disablekb=1&fs=0&loop=1&modestbranding=1&playsinline=1&playlist=' + id + '&rel=0';
+        console.log('[Música] Usando fallback iframe:', id);
       }
 
       var btn = document.getElementById('btn-epic-music');
@@ -5060,15 +5091,18 @@
     }
 
     function stopThemeMusic(){
-      var frame = ensureMusicFrame();
-      frame.removeAttribute('src');
-
       // Detener el player de la API si existe
       if(epicPlayer && epicReady){
         try {
           epicPlayer.pauseVideo();
           epicPlayer.seekTo(0, true);
         } catch(e){}
+      }
+      
+      // También limpiar el iframe si existe
+      var frame = document.getElementById('epic-music-player');
+      if(frame && frame.tagName === 'IFRAME'){
+        frame.removeAttribute('src');
       }
 
       var btn = document.getElementById('btn-epic-music');
