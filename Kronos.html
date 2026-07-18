@@ -5629,6 +5629,187 @@
     }
   })();
 
+/* ============ FIX DEFINITIVO: ETIQUETAS DE UCRONÍA MULTI-SELECCIÓN ============ */
+(function(){
+  "use strict";
+
+  function ufixSortedUchronies(){
+    if(!state.timeline) return [];
+    if(!Array.isArray(state.timeline.uchronies)) state.timeline.uchronies = [];
+    return state.timeline.uchronies.slice().sort(function(a,b){
+      var ao = a.order == null ? 999999 : Number(a.order);
+      var bo = b.order == null ? 999999 : Number(b.order);
+      if(ao !== bo) return ao - bo;
+      return String(a.name || '').localeCompare(String(b.name || ''));
+    });
+  }
+
+  function ufixNormalizeNode(node){
+    if(!node) return;
+    var validIds = {};
+    (state.timeline && state.timeline.uchronies || []).forEach(function(u){ validIds[u.id] = true; });
+
+    if(Array.isArray(node.uchronyIds)){
+      node.uchronyIds = node.uchronyIds.filter(function(id){ return id && validIds[id]; });
+    } else if(node.uchronyId && validIds[node.uchronyId]){
+      node.uchronyIds = [node.uchronyId];
+    } else {
+      node.uchronyIds = [];
+    }
+    node.uchronyId = node.uchronyIds[0] || '';
+  }
+
+  function ufixMigrateLegacyBranch(node){
+    if(!state.timeline) return;
+    ufixNormalizeNode(node);
+    if(node.uchronyIds.length > 0) return;
+    if(!node.branch || !String(node.branch).trim()) return;
+
+    var names = String(node.branch).split('/').map(function(s){ return s.trim(); }).filter(Boolean);
+    if(names.length === 0) return;
+    if(!Array.isArray(state.timeline.uchronies)) state.timeline.uchronies = [];
+
+    var byName = {};
+    state.timeline.uchronies.forEach(function(u){
+      if(u && u.name) byName[u.name.trim().toLowerCase()] = u;
+    });
+
+    var ids = names.map(function(name){
+      var key = name.toLowerCase();
+      var u = byName[key];
+      if(!u){
+        u = {
+          id: 'u_' + Math.random().toString(36).slice(2,9) + Date.now().toString(36).slice(-4),
+          name: name,
+          order: state.timeline.uchronies.length + 1
+        };
+        state.timeline.uchronies.push(u);
+        byName[key] = u;
+      }
+      return u.id;
+    });
+
+    node.uchronyIds = ids;
+    node.uchronyId = ids[0] || '';
+  }
+
+  function ufixSyncLabel(node){
+    ufixNormalizeNode(node);
+    var selected = ufixSortedUchronies().filter(function(u){
+      return node.uchronyIds.indexOf(u.id) !== -1;
+    });
+    node.branch = selected.map(function(u){ return u.name; }).join(' / ');
+    node.branchOrder = selected.length ? selected[0].order : null;
+  }
+
+  function ufixSyncAll(){
+    if(!state.timeline) return;
+    if(!Array.isArray(state.timeline.uchronies)) state.timeline.uchronies = [];
+    nodeArray().forEach(function(node){
+      ufixMigrateLegacyBranch(node);
+      ufixSyncLabel(node);
+    });
+  }
+
+  // Punto único de verdad: cada vez que se dibujan las tarjetas de nodo,
+  // se recalculan las etiquetas de ucronía a partir de uchronyIds ANTES
+  // de pintarlas. Corrige el bug sin importar qué código haya disparado
+  // el redibujado (editor, panel de ucronías, undo/redo, etc.).
+  var ufixPrevRenderNodes = renderNodes;
+  renderNodes = function(){
+    ufixSyncAll();
+    ufixPrevRenderNodes();
+  };
+
+  // Reconstruye el <select> del editor con UN solo listener limpio,
+  // eliminando cualquier estado colgado de versiones anteriores.
+  function ufixEnsureSelect(){
+    var old = document.getElementById('f-branch');
+    if(!old || old.dataset.ufixReady === 'true') return old;
+
+    var fresh = old.cloneNode(false);
+    fresh.multiple = true;
+    fresh.removeAttribute('data-multi-uchrony-ready');
+    fresh.dataset.ufixReady = 'true';
+    old.parentNode.replaceChild(fresh, old);
+
+    fresh.addEventListener('change', function(){
+      var node = currentNode();
+      if(!node) return;
+      trackFieldChange();
+      node.uchronyIds = Array.prototype.slice.call(fresh.selectedOptions)
+        .map(function(opt){ return opt.value; })
+        .filter(Boolean);
+      ufixSyncLabel(node);
+      renderNodes();
+      renderConnectors();
+      scheduleSave();
+      commitFieldEdit();
+    });
+
+    return fresh;
+  }
+
+  function ufixRenderSelect(){
+    var select = ufixEnsureSelect();
+    var node = currentNode();
+    if(!select || !node || !state.timeline) return;
+
+    ufixNormalizeNode(node);
+    select.innerHTML = '';
+    ufixSortedUchronies().forEach(function(u){
+      var opt = document.createElement('option');
+      opt.value = u.id;
+      opt.textContent = (u.order ? u.order + '. ' : '') + u.name;
+      opt.selected = node.uchronyIds.indexOf(u.id) !== -1;
+      select.appendChild(opt);
+    });
+    select.size = Math.min(6, Math.max(3, ufixSortedUchronies().length));
+  }
+
+  var ufixPrevOpenEditorFor = openEditorFor;
+  openEditorFor = function(id){
+    ufixPrevOpenEditorFor(id);
+    ufixRenderSelect();
+  };
+
+  var ufixPrevRenderAll = renderAll;
+  renderAll = function(){
+    ufixPrevRenderAll();
+    ufixRenderSelect();
+  };
+
+  // Secuencia de presentación: se basa exclusivamente en uchronyIds,
+  // agrupando por ucronía (según su orden) y, dentro de cada una,
+  // por el orden cronológico del nodo.
+  buildPresentationSequence = function(){
+    ufixSyncAll();
+    var sequence = [];
+
+    ufixSortedUchronies().forEach(function(uchrony){
+      var nodes = nodeArray().filter(function(node){
+        return node.order != null && node.order !== '' &&
+          node.uchronyIds && node.uchronyIds.indexOf(uchrony.id) !== -1;
+      }).sort(function(a,b){ return Number(a.order) - Number(b.order); });
+
+      nodes.forEach(function(node){
+        var clone = Object.assign({}, node);
+        clone.branch = uchrony.name;
+        clone.branchOrder = uchrony.order;
+        sequence.push(clone);
+      });
+    });
+
+    if(sequence.length === 0){
+      return nodeArray().filter(function(node){
+        return node.order != null && node.order !== '';
+      }).sort(function(a,b){ return Number(a.order) - Number(b.order); });
+    }
+
+    return sequence;
+  };
+})();
+
 init();
 })();
 
