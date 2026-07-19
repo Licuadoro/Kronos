@@ -3633,16 +3633,8 @@
   bindAddButton();
 })();
 
-   /* ============ FINAL THEME POLISH: ADAPTIVE GLASS, THEME MUSIC, STEAMPUNK ============ */
+   /* ============ FINAL THEME POLISH: ADAPTIVE GLASS AND STEAMPUNK ============ */
   (function(){
-    var THEME_MUSIC = {
-      default: 'B4zhbfsxdoM',
-      nocturne: 'x5U8kD9gde0',
-      console: 'OuRvOCf9mJ4',
-      cyberpunk: 'K7IV1pz2FHs',
-      steampunk: 'a71NT6umCEo'
-    };
-
     var THEME_GLASS = {
       default: {
         a: 'rgba(85,0,255,0.62)',
@@ -3909,7 +3901,15 @@
     var loadedMusicTheme = null;
 
     function currentMusicId(){
-      return THEME_MUSIC[themeName()] || THEME_MUSIC.default;
+      return THEME_MUSIC_IDS[activeThemeForMusic()] || THEME_MUSIC_IDS.default;
+    }
+
+    function activeThemeForMusic(){
+      if(document.documentElement.classList.contains('theme-console')) return 'console';
+      if(document.documentElement.classList.contains('theme-cyberpunk')) return 'cyberpunk';
+      if(document.documentElement.classList.contains('theme-nocturne')) return 'nocturne';
+      if(document.documentElement.classList.contains('theme-steampunk')) return 'steampunk';
+      return currentTheme || 'default';
     }
 
     function updateMusicButton(){
