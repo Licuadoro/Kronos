@@ -4920,7 +4920,11 @@
       cyberpunk: 'K7IV1pz2FHs',
       steampunk: 'a71NT6umCEo'
     };
-
+ var epicPlayer = null;
+    var epicReady = false;
+    var epicMuted = false;
+    var loadedMusicTheme = null;
+    
     function ensureFixStyles(){
       if(document.getElementById(LINK_FIX_STYLE_ID)) return;
 
